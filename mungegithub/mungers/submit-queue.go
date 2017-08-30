@@ -225,8 +225,10 @@ type SubmitQueue struct {
 	opts                *options.Options
 	NonBlockingJobNames []string
 
-	GateApproved bool
-	GateCLA      bool
+	GateApproved                 bool
+	GateCLA                      bool
+	GateGHReviewApproved         bool
+	GateGHReviewChangesRequested bool
 
 	// If FakeE2E is true, don't try to connect to JenkinsHost, all jobs are passing.
 	FakeE2E bool
@@ -589,6 +591,8 @@ func (sq *SubmitQueue) RegisterOptions(opts *options.Options) sets.String {
 	opts.RegisterString(&sq.ContextURL, "context-url", "", "URL where the submit queue is serving - used in Github status contexts")
 	opts.RegisterBool(&sq.GateApproved, "gate-approved", false, "Gate on approved label")
 	opts.RegisterBool(&sq.GateCLA, "gate-cla", false, "Gate on cla labels")
+	opts.RegisterBool(&sq.GateGHReviewApproved, "gh-review-approved", false, "Gate github review, approve")
+	opts.RegisterBool(&sq.GateGHReviewChangesRequested, "gh-review-changes-requested", false, "Gate github review, changes request")
 
 	opts.RegisterUpdateCallback(func(changed sets.String) error {
 		if changed.HasAny("prow-url", "batch-enabled") {
@@ -965,30 +969,31 @@ func (sq *SubmitQueue) getGithubE2EStatus() []byte {
 }
 
 const (
-	unknown                 = "unknown failure"
-	noCLA                   = "PR is missing CLA label; needs one of " + claYesLabel + ", " + cncfClaYesLabel + " or " + claHumanLabel
-	noLGTM                  = "PR does not have " + lgtmLabel + " label."
-	noApproved              = "PR does not have " + approvedLabel + " label."
-	lgtmEarly               = "The PR was changed after the " + lgtmLabel + " label was added."
-	unmergeable             = "PR is unable to be automatically merged. Needs rebase."
-	undeterminedMergability = "Unable to determine is PR is mergeable. Will try again later."
-	noMerge                 = "Will not auto merge because " + doNotMergeLabel + " is present"
-	ciFailure               = "Required Github CI test is not green"
-	ciFailureFmt            = ciFailure + ": %s"
-	e2eFailure              = "The e2e tests are failing. The entire submit queue is blocked."
-	e2eRecover              = "The e2e tests started passing. The submit queue is unblocked."
-	merged                  = "MERGED!"
-	mergedSkippedRetest     = "MERGED! (skipped retest because of label)"
-	mergedBatch             = "MERGED! (batch)"
-	mergedByHand            = "MERGED! (by hand outside of submit queue)"
-	ghE2EQueued             = "Queued to run github e2e tests a second time."
-	ghE2EWaitingStart       = "Requested and waiting for github e2e test to start running a second time."
-	ghE2ERunning            = "Running github e2e tests a second time."
-	ghE2EFailed             = "Second github e2e run failed."
-	unmergeableMilestone    = "Milestone is for a future release and cannot be merged"
-	headCommitChanged       = "This PR has changed since we ran the tests"
-	ghReviewStateUnclear    = "Cannot get gh reviews status"
-	ghReview                = "This pr has no gh approve or has changes request"
+	unknown                  = "unknown failure"
+	noCLA                    = "PR is missing CLA label; needs one of " + claYesLabel + ", " + cncfClaYesLabel + " or " + claHumanLabel
+	noLGTM                   = "PR does not have " + lgtmLabel + " label."
+	noApproved               = "PR does not have " + approvedLabel + " label."
+	lgtmEarly                = "The PR was changed after the " + lgtmLabel + " label was added."
+	unmergeable              = "PR is unable to be automatically merged. Needs rebase."
+	undeterminedMergability  = "Unable to determine is PR is mergeable. Will try again later."
+	noMerge                  = "Will not auto merge because " + doNotMergeLabel + " is present"
+	ciFailure                = "Required Github CI test is not green"
+	ciFailureFmt             = ciFailure + ": %s"
+	e2eFailure               = "The e2e tests are failing. The entire submit queue is blocked."
+	e2eRecover               = "The e2e tests started passing. The submit queue is unblocked."
+	merged                   = "MERGED!"
+	mergedSkippedRetest      = "MERGED! (skipped retest because of label)"
+	mergedBatch              = "MERGED! (batch)"
+	mergedByHand             = "MERGED! (by hand outside of submit queue)"
+	ghE2EQueued              = "Queued to run github e2e tests a second time."
+	ghE2EWaitingStart        = "Requested and waiting for github e2e test to start running a second time."
+	ghE2ERunning             = "Running github e2e tests a second time."
+	ghE2EFailed              = "Second github e2e run failed."
+	unmergeableMilestone     = "Milestone is for a future release and cannot be merged"
+	headCommitChanged        = "This PR has changed since we ran the tests"
+	ghReviewStateUnclear     = "Cannot get gh reviews status"
+	ghReviewApproved         = "This pr has no Github review \"approved\""
+	ghReviewChangesRequested = "Review(s) requested changes on this pr"
 )
 
 // validForMergeExt is the base logic about what PR can be automatically merged.
@@ -1072,11 +1077,14 @@ func (sq *SubmitQueue) validForMergeExt(obj *github.MungeObject, checkStatus boo
 		}
 	}
 
-	if approvedReview, changesRequestedReview, ok := obj.CollectGHReviewStatus(); !ok {
+	if approvedReview, changesRequestedReview, ok := obj.CollectGHReviewStatus(); !ok && (sq.GateGHReviewApproved || sq.GateGHReviewChangesRequested) {
 		sq.SetMergeStatus(obj, ghReviewStateUnclear)
 		return false
-	} else if len(approvedReview) == 0 || len(changesRequestedReview) > 0 {
-		sq.SetMergeStatus(obj, ghReview)
+	} else if len(approvedReview) == 0 && sq.GateGHReviewApproved {
+		sq.SetMergeStatus(obj, ghReviewApproved)
+		return false
+	} else if len(changesRequestedReview) > 0 && sq.GateGHReviewChangesRequested {
+		sq.SetMergeStatus(obj, ghReviewChangesRequested)
 		return false
 	}
 

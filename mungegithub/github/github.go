@@ -2504,7 +2504,6 @@ func (obj *MungeObject) CollectGHReviewStatus() ([]*github.PullRequestReview, []
 		if r, exist := latestReviews[reviewer]; !exist || r.GetSubmittedAt().Before(review.GetSubmittedAt()) {
 			latestReviews[reviewer] = review
 		}
-
 	}
 
 	for _, review := range latestReviews {
