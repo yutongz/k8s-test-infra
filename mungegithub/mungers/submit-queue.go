@@ -1077,15 +1077,17 @@ func (sq *SubmitQueue) validForMergeExt(obj *github.MungeObject, checkStatus boo
 		}
 	}
 
-	if approvedReview, changesRequestedReview, ok := obj.CollectGHReviewStatus(); !ok && (sq.GateGHReviewApproved || sq.GateGHReviewChangesRequested) {
-		sq.SetMergeStatus(obj, ghReviewStateUnclear)
-		return false
-	} else if len(approvedReview) == 0 && sq.GateGHReviewApproved {
-		sq.SetMergeStatus(obj, ghReviewApproved)
-		return false
-	} else if len(changesRequestedReview) > 0 && sq.GateGHReviewChangesRequested {
-		sq.SetMergeStatus(obj, ghReviewChangesRequested)
-		return false
+	if sq.GateGHReviewApproved || sq.GateGHReviewChangesRequested {
+		if approvedReview, changesRequestedReview, ok := obj.CollectGHReviewStatus(); !ok {
+			sq.SetMergeStatus(obj, ghReviewStateUnclear)
+			return false
+		} else if len(approvedReview) == 0 && sq.GateGHReviewApproved {
+			sq.SetMergeStatus(obj, ghReviewApproved)
+			return false
+		} else if len(changesRequestedReview) > 0 && sq.GateGHReviewChangesRequested {
+			sq.SetMergeStatus(obj, ghReviewChangesRequested)
+			return false
+		}
 	}
 
 	if !obj.HasLabel(lgtmLabel) {
