@@ -105,12 +105,6 @@ spec:
           - name: http
             containerPort: 8888
         volumeMounts:
-        - name: hmac
-          mountPath: /etc/webhook
-          readOnly: true
-        - name: oauth
-          mountPath: /etc/github
-          readOnly: true
         - name: config
           mountPath: /etc/config
           readOnly: true
@@ -118,12 +112,6 @@ spec:
           mountPath: /etc/plugins
           readOnly: true
       volumes:
-      - name: hmac
-        secret:
-          secretName: hmac-token
-      - name: oauth
-        secret:
-          secretName: oauth-token
       - name: config
         configMap:
           name: config
@@ -158,20 +146,15 @@ spec:
       serviceAccountName: "plank"
       containers:
       - name: plank
-        image: gcr.io/k8s-prow/plank:v20180814-0a3efc115
+        image: docker.io/yutongz/plank:latest
         args:
         - --dry-run=false
+        - --github-token-file=  
         volumeMounts:
-        - name: oauth
-          mountPath: /etc/github
-          readOnly: true
         - name: config
           mountPath: /etc/config
           readOnly: true
       volumes:
-      - name: oauth
-        secret:
-          secretName: oauth-token
       - name: config
         configMap:
           name: config
