@@ -20,9 +20,13 @@ package report
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strings"
 	"text/template"
+    "encoding/json"
+
+	"cloud.google.com/go/pubsub"
 
 	"k8s.io/test-infra/prow/github"
 	"k8s.io/test-infra/prow/kube"
@@ -32,6 +36,7 @@ import (
 
 const (
 	commentTag = "<!-- test report -->"
+	pubsubRunIDLabel = "pubsub-runID"
 )
 
 type GithubClient interface {
@@ -41,6 +46,13 @@ type GithubClient interface {
 	CreateComment(org, repo string, number int, comment string) error
 	DeleteComment(org, repo string, ID int) error
 	EditComment(org, repo string, ID int, comment string) error
+}
+
+type PubSubReportMessage struct {
+	RunID string
+	Status kube.ProwJobState
+	SelfURL string
+
 }
 
 // reportStatus should be called on status different from Success.
@@ -128,6 +140,37 @@ func Report(ghc GithubClient, reportTemplate *template.Template, pj kube.ProwJob
 			}
 		}
 	}
+	return nil
+}
+
+func PubSubReport(projectName, TopicName string, pj kube.ProwJob) error {
+	ctx := context.Background()
+	client, err := pubsub.NewClient(ctx, projectName)
+	if err != nil {
+		return fmt.Errorf("Could not create pubsub Client: %v", err)
+	}
+
+	topic := client.Topic(TopicName)
+
+	psReport := &PubSubReportMessage{
+		RunID: pj.GetLabels()[pubsubRunIDLabel],
+		Status: pj.Status.State,
+		SelfURL: pj.GetSelfLink(),
+	}
+	d, err := json.Marshal(psReport)
+	if err != nil {
+		return fmt.Errorf("Could not marshal pubsub report: %v", err)
+	}
+
+	res := topic.Publish(ctx, &pubsub.Message{
+		Data: d,
+	})
+
+	_, err = res.Get(ctx)
+	if err != nil {
+		return fmt.Errorf("Failed to publish pubsub message: %v", err)
+	}
+
 	return nil
 }
 

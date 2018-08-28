@@ -37,6 +37,9 @@ import (
 
 const (
 	testInfra = "https://github.com/kubernetes/test-infra/issues"
+
+	pubsubProjectLabel = "pubsub-project"
+	pubsubTopicLabel = "pubsub-topic"
 )
 
 type kubeClient interface {
@@ -222,6 +225,16 @@ func (c *Controller) Sync() error {
 	if c.ghc != nil {
 		reportTemplate := c.ca.Config().Plank.ReportTemplate
 		for report := range reportCh {
+			// PubSub report
+			project, projectOK := report.Labels[pubsubProjectLabel]
+			topic, topicOK := report.Labels[pubsubTopicLabel]
+			if projectOK && topicOK {
+				if err := reportlib.PubSubReport(project, topic, report); err != nil {
+					reportErrs = append(reportErrs, err)
+					c.log.WithFields(pjutil.ProwJobFields(&report)).WithError(err).Warn("Failed to report ProwJob status to PubSub")
+				}
+			}
+
 			if err := reportlib.Report(c.ghc, reportTemplate, report); err != nil {
 				reportErrs = append(reportErrs, err)
 				c.log.WithFields(pjutil.ProwJobFields(&report)).WithError(err).Warn("Failed to report ProwJob status")
