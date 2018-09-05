@@ -809,12 +809,13 @@
   revision = "fd80eb99c8f653c847d294a001bdf2a3a6f768f5"
 
 [[projects]]
+  branch = "master"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
-  revision = "a646d33e2ee3172a661fc09bca23bb4889a41bc8"
+  revision = "ebe1bf3edb3325c393447059974de898d5133eb8"
 
 [[projects]]
   branch = "master"
