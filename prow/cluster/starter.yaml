@@ -105,12 +105,6 @@ spec:
           - name: http
             containerPort: 8888
         volumeMounts:
-        - name: hmac
-          mountPath: /etc/webhook
-          readOnly: true
-        - name: oauth
-          mountPath: /etc/github
-          readOnly: true
         - name: config
           mountPath: /etc/config
           readOnly: true
@@ -118,12 +112,6 @@ spec:
           mountPath: /etc/plugins
           readOnly: true
       volumes:
-      - name: hmac
-        secret:
-          secretName: hmac-token
-      - name: oauth
-        secret:
-          secretName: oauth-token
       - name: config
         configMap:
           name: config
@@ -161,20 +149,33 @@ spec:
         image: gcr.io/k8s-prow/plank:v20180814-0a3efc115
         args:
         - --dry-run=false
+        - --github-token-file=
         volumeMounts:
-        - name: oauth
-          mountPath: /etc/github
-          readOnly: true
         - name: config
           mountPath: /etc/config
           readOnly: true
       volumes:
-      - name: oauth
-        secret:
-          secretName: oauth-token
       - name: config
         configMap:
           name: config
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: crier
+  labels:
+    app: crier
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: crier
+    spec:
+      terminationGracePeriodSeconds: 30
+      containers:
+      - name: crier
+        image: docker.io/yutongz/crier:pubsub-1
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -399,6 +400,45 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: "plank"
+---
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: "crier"
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: "crier"
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - create
+      - delete
+      - list
+  - apiGroups:
+      - "prow.k8s.io"
+    resources:
+      - prowjobs
+    verbs:
+      - create
+      - list
+      - update
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: "crier"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: "crier"
+subjects:
+- kind: ServiceAccount
+  name: "crier"
 ---
 kind: ServiceAccount
 apiVersion: v1
