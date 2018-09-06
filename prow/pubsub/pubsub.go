@@ -30,17 +30,16 @@ import (
 )
 
 const (
-	pubsubProjectLabel = "pubsub-project"
-	pubsubTopicLabel   = "pubsub-topic"
-	pubsubRunIDLabel   = "pubsub-runID"
+	pubsubProjectLabel = "prow.k8s.io/pubsub-project"
+	pubsubTopicLabel   = "prow.k8s.io/pubsub-topic"
+	pubsubRunIDLabel   = "prow.k8s.io/pubsub-runID"
 )
 
 type ReportMessage struct {
-	Project  string            `json:"project"`
-	Topic    string            `json:"topic"`
-	RunID    string            `json:"runid"`
-	Status   kube.ProwJobState `json:"status"`
-	SelfLink string            `json:"selfurl"`
+	Project string            `json:"project"`
+	Topic   string            `json:"topic"`
+	RunID   string            `json:"runid"`
+	Status  kube.ProwJobState `json:"status"`
 }
 
 func Report(pj kube.ProwJob) error {
@@ -84,11 +83,10 @@ func generateMessageFromPJ(pj kube.ProwJob) (*ReportMessage, error) {
 		return nil, fmt.Errorf("Cannot generate pubsub message, PubSub run id is empty.")
 	}
 	psReport := &ReportMessage{
-		Project:  projectName,
-		Topic:    topicName,
-		RunID:    runID,
-		Status:   pj.Status.State,
-		SelfLink: pj.GetSelfLink(),
+		Project: projectName,
+		Topic:   topicName,
+		RunID:   runID,
+		Status:  pj.Status.State,
 	}
 
 	return psReport, nil

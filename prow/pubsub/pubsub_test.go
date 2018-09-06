@@ -20,16 +20,15 @@ import (
 	"reflect"
 	"testing"
 
+	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/test-infra/prow/kube"
-	"fmt"
 )
 
 const (
 	testPubSubProjectName = "test-project"
 	testPubSubTopicName   = "test-topic"
 	testPubSubRunID       = "test-id"
-	testSelfLink          = "prow-gob.gcpnode.com/prowjob=123abc"
 )
 
 func TestGenerateMessageFromPJ(t *testing.T) {
@@ -47,18 +46,16 @@ func TestGenerateMessageFromPJ(t *testing.T) {
 						pubsubTopicLabel:   testPubSubTopicName,
 						pubsubRunIDLabel:   testPubSubRunID,
 					},
-					SelfLink: testSelfLink,
 				},
 				Status: kube.ProwJobStatus{
 					State: kube.SuccessState,
 				},
 			},
 			expectedMessage: &ReportMessage{
-				Project:  testPubSubProjectName,
-				Topic:    testPubSubTopicName,
-				RunID:    testPubSubRunID,
-				Status:   kube.SuccessState,
-				SelfLink: testSelfLink,
+				Project: testPubSubProjectName,
+				Topic:   testPubSubTopicName,
+				RunID:   testPubSubRunID,
+				Status:  kube.SuccessState,
 			},
 			expectedError: nil,
 		},
@@ -67,17 +64,16 @@ func TestGenerateMessageFromPJ(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-no-project",
 					Labels: map[string]string{
-						pubsubTopicLabel:   testPubSubTopicName,
-						pubsubRunIDLabel:   testPubSubRunID,
+						pubsubTopicLabel: testPubSubTopicName,
+						pubsubRunIDLabel: testPubSubRunID,
 					},
-					SelfLink: testSelfLink,
 				},
 				Status: kube.ProwJobStatus{
 					State: kube.SuccessState,
 				},
 			},
 			expectedMessage: nil,
-			expectedError: nil,
+			expectedError:   nil,
 		},
 		{
 			pj: kube.ProwJob{
@@ -87,14 +83,13 @@ func TestGenerateMessageFromPJ(t *testing.T) {
 						pubsubProjectLabel: testPubSubProjectName,
 						pubsubRunIDLabel:   testPubSubRunID,
 					},
-					SelfLink: testSelfLink,
 				},
 				Status: kube.ProwJobStatus{
 					State: kube.SuccessState,
 				},
 			},
 			expectedMessage: nil,
-			expectedError: nil,
+			expectedError:   nil,
 		},
 		{
 			pj: kube.ProwJob{
@@ -104,41 +99,14 @@ func TestGenerateMessageFromPJ(t *testing.T) {
 						pubsubProjectLabel: testPubSubProjectName,
 						pubsubTopicLabel:   testPubSubTopicName,
 					},
-					SelfLink: testSelfLink,
 				},
 				Status: kube.ProwJobStatus{
 					State: kube.SuccessState,
 				},
 			},
 			expectedMessage: nil,
-			expectedError: fmt.Errorf("Cannot generate pubsub message, PubSub run id is empty."),
+			expectedError:   fmt.Errorf("Cannot generate pubsub message, PubSub run id is empty."),
 		},
-		{
-			pj: kube.ProwJob{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "test-no-selflink",
-					Labels: map[string]string{
-						pubsubProjectLabel: testPubSubProjectName,
-						pubsubTopicLabel:   testPubSubTopicName,
-						pubsubRunIDLabel:   testPubSubRunID,
-					},
-					SelfLink: "",
-				},
-				Status: kube.ProwJobStatus{
-					State: kube.SuccessState,
-				},
-			},
-			expectedMessage: &ReportMessage{
-				Project:  testPubSubProjectName,
-				Topic:    testPubSubTopicName,
-				RunID:    testPubSubRunID,
-				Status:   kube.SuccessState,
-				SelfLink: "",
-			},
-			expectedError: nil,
-		},
-
-
 	}
 
 	for _, tc := range testcases {
@@ -154,5 +122,3 @@ func TestGenerateMessageFromPJ(t *testing.T) {
 		}
 	}
 }
-
-

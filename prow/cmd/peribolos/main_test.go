@@ -1675,7 +1675,7 @@ func TestDumpOrgConfig(t *testing.T) {
 		{
 			name: "basically works",
 			meta: github.Organization{
-				Name: hello,
+				Name:                         hello,
 				MembersCanCreateRepositories: yes,
 				DefaultRepositoryPermission:  string(perm),
 			},
