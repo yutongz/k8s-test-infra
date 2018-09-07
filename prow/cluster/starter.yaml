@@ -425,9 +425,20 @@ rules:
     resources:
       - prowjobs
     verbs:
+      - watch
       - create
       - list
       - update
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  # "namespace" omitted since ClusterRoles are not namespaced
+  name: crier
+rules:
+- apiGroups: ["prow.k8s.io"]
+  resources: ["prowjobs"]
+  verbs: ["get", "watch", "list"]
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
@@ -435,7 +446,7 @@ metadata:
   name: "crier"
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
+  kind: ClusterRole
   name: "crier"
 subjects:
 - kind: ServiceAccount
