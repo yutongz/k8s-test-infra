@@ -176,7 +176,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
       - name: crier
-        image: docker.io/yutongz/crier:pubsub-1
+        image: docker.io/yutongz/crier:pubsub-2
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
