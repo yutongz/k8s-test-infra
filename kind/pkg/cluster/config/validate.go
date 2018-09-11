@@ -22,6 +22,9 @@ import "fmt"
 // with the config, or nil if there are none
 func (c *Config) Validate() error {
 	errs := []error{}
+	if c.Image == "" {
+		errs = append(errs, fmt.Errorf("image is a required field"))
+	}
 	// TODO(bentheelder): support multiple nodes
 	if c.NumNodes != 1 {
 		errs = append(errs, fmt.Errorf(
@@ -31,7 +34,7 @@ func (c *Config) Validate() error {
 	}
 	if c.NodeLifecycle != nil {
 		for _, hook := range c.NodeLifecycle.PreBoot {
-			if hook.Command == "" {
+			if len(hook.Command) == 0 {
 				errs = append(errs, fmt.Errorf(
 					"preBoot hooks must set command to a non-empty value",
 				))
@@ -41,7 +44,7 @@ func (c *Config) Validate() error {
 			}
 		}
 		for _, hook := range c.NodeLifecycle.PreKubeadm {
-			if hook.Command == "" {
+			if len(hook.Command) == 0 {
 				errs = append(errs, fmt.Errorf(
 					"preKubeadm hooks must set command to a non-empty value",
 				))
@@ -51,7 +54,7 @@ func (c *Config) Validate() error {
 			}
 		}
 		for _, hook := range c.NodeLifecycle.PostKubeadm {
-			if hook.Command == "" {
+			if len(hook.Command) == 0 {
 				errs = append(errs, fmt.Errorf(
 					"postKubeadm hooks must set command to a non-empty value",
 				))

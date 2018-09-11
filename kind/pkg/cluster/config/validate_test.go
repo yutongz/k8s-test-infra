@@ -31,9 +31,11 @@ func TestConfigValidate(t *testing.T) {
 		},
 		{
 			TestName: "Invalid number of nodes (not yet supported",
-			Config: &Config{
-				NumNodes: 2,
-			},
+			Config: func() *Config {
+				cfg := New()
+				cfg.NumNodes = 2
+				return cfg
+			}(),
 			ExpectedErrors: 1,
 		},
 		{
@@ -43,7 +45,7 @@ func TestConfigValidate(t *testing.T) {
 				cfg.NodeLifecycle = &NodeLifecycle{
 					PreBoot: []LifecycleHook{
 						{
-							Command: "",
+							Command: []string{},
 						},
 					},
 				}
@@ -59,7 +61,7 @@ func TestConfigValidate(t *testing.T) {
 					PreKubeadm: []LifecycleHook{
 						{
 							Name:    "pull an image",
-							Command: "",
+							Command: []string{},
 						},
 					},
 				}
@@ -75,10 +77,19 @@ func TestConfigValidate(t *testing.T) {
 					PostKubeadm: []LifecycleHook{
 						{
 							Name:    "pull an image",
-							Command: "",
+							Command: []string{},
 						},
 					},
 				}
+				return cfg
+			}(),
+			ExpectedErrors: 1,
+		},
+		{
+			TestName: "Empty image field",
+			Config: func() *Config {
+				cfg := New()
+				cfg.Image = ""
 				return cfg
 			}(),
 			ExpectedErrors: 1,
