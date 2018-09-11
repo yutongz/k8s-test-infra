@@ -1,5 +1,5 @@
 /*
-Copyright 2017 The Kubernetes Authors.
+Copyright 2018 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ func NewReporter() *Client {
 func (c *Client) Report(pj *kube.ProwJob) error {
 	message, err := generateMessageFromPJ(pj)
 	if message == nil {
-		return err
+		return fmt.Errorf("This prowjob cannot handle by this reporter, prowjob name: %s", pj.Name)
 	}
 
 	ctx := context.Background()
