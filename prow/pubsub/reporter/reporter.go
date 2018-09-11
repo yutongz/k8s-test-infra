@@ -17,7 +17,7 @@ limitations under the License.
 // Package report contains helpers for writing comments and updating
 // statuses in Github.
 
-package pubsub
+package reporter
 
 import (
 	"context"
@@ -42,7 +42,15 @@ type ReportMessage struct {
 	Status  kube.ProwJobState `json:"status"`
 }
 
-func Report(pj kube.ProwJob) error {
+type Client struct {
+
+}
+
+func NewReporter() *Client {
+	return &Client{}
+}
+
+func (c *Client) Report(pj kube.ProwJob) error {
 	message, err := generateMessageFromPJ(pj)
 	if message == nil {
 		return err
@@ -50,6 +58,7 @@ func Report(pj kube.ProwJob) error {
 
 	ctx := context.Background()
 	client, err := pubsub.NewClient(ctx, message.Project)
+
 	if err != nil {
 		return fmt.Errorf("Could not create pubsub Client: %v", err)
 	}
