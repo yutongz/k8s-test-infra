@@ -21,8 +21,8 @@ go_test(
 
 go_library(
     name = "go_default_library",
-    srcs = ["report.go"],
-    importpath = "k8s.io/test-infra/prow/pubsub",
+    srcs = ["reporter.go"],
+    importpath = "k8s.io/test-infra/prow/pubsub/reporter",
     tags = ["automanaged"],
     deps = [
         "//prow/kube:go_default_library",

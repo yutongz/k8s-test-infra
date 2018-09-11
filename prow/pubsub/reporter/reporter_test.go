@@ -33,12 +33,12 @@ const (
 
 func TestGenerateMessageFromPJ(t *testing.T) {
 	var testcases = []struct {
-		pj              kube.ProwJob
+		pj              *kube.ProwJob
 		expectedMessage *ReportMessage
 		expectedError   error
 	}{
 		{
-			pj: kube.ProwJob{
+			pj: &kube.ProwJob{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test1",
 					Labels: map[string]string{
@@ -60,7 +60,7 @@ func TestGenerateMessageFromPJ(t *testing.T) {
 			expectedError: nil,
 		},
 		{
-			pj: kube.ProwJob{
+			pj: &kube.ProwJob{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-no-project",
 					Labels: map[string]string{
@@ -76,7 +76,7 @@ func TestGenerateMessageFromPJ(t *testing.T) {
 			expectedError:   nil,
 		},
 		{
-			pj: kube.ProwJob{
+			pj: &kube.ProwJob{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-no-topic",
 					Labels: map[string]string{
@@ -92,7 +92,7 @@ func TestGenerateMessageFromPJ(t *testing.T) {
 			expectedError:   nil,
 		},
 		{
-			pj: kube.ProwJob{
+			pj: &kube.ProwJob{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-no-runID",
 					Labels: map[string]string{

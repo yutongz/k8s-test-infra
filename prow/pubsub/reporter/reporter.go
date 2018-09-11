@@ -43,14 +43,17 @@ type ReportMessage struct {
 }
 
 type Client struct {
-
+	// Empty structure because unlike github or gerrit client, one GCP Pub/Sub client is tied to one GCP project.
+	// While GCP project name is provided by the label in each prowjob.
+	// Which means we could create a Pub/Sub client only when we actually get a prowjob to do reporting,
+	// instead of creating a Pub/Sub client while initializing the reporter client.
 }
 
 func NewReporter() *Client {
 	return &Client{}
 }
 
-func (c *Client) Report(pj kube.ProwJob) error {
+func (c *Client) Report(pj *kube.ProwJob) error {
 	message, err := generateMessageFromPJ(pj)
 	if message == nil {
 		return err
@@ -81,7 +84,7 @@ func (c *Client) Report(pj kube.ProwJob) error {
 	return nil
 }
 
-func generateMessageFromPJ(pj kube.ProwJob) (*ReportMessage, error) {
+func generateMessageFromPJ(pj *kube.ProwJob) (*ReportMessage, error) {
 	projectName := pj.Labels[pubsubProjectLabel]
 	topicName := pj.Labels[pubsubTopicLabel]
 	if projectName == "" || topicName == "" {

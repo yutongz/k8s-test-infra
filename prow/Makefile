@@ -58,6 +58,8 @@ NEEDS_REBASE_VERSION      ?= $(TAG)
 CHECKCONFIG_VERSION       ?= $(TAG)
 # GERRIT_CRIER_VERSION is the version of the gerrit-crier image
 GERRIT_CRIER_VERSION      ?= $(TAG)
+# PUBSUB_CRIER_VERSION is the version of the pubsub-crier image
+PUBSUB_CRIER_VERSION      ?= $(TAG)
 
 # These are the usual GKE variables.
 PROJECT       ?= k8s-prow
@@ -296,3 +298,12 @@ gerrit-crier-image: alpine-image
 	rm cmd/gerrit-crier/gerrit-crier
 
 .PHONY: gerrit-crier-image
+
+pubsub-crier-image: alpine-image
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o cmd/pubsub-crier/pubsub-crier k8s.io/test-infra/prow/cmd/pubsub-crier
+	docker build -t "$(REGISTRY)/$(PROJECT)/pubsub-crier:$(PUBSUB_CRIER_VERSION)" $(DOCKER_LABELS) cmd/pubsub-crier
+	$(PUSH) "$(REGISTRY)/$(PROJECT)/pubsub-crier:$(PUBSUB_CRIER_VERSION)"
+	rm cmd/pubsub-crier/pubsub-crier
+
+.PHONY: pubsub-crier-image
+

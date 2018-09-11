@@ -36,8 +36,8 @@ import (
 	prowjobinformer "k8s.io/test-infra/prow/client/informers/externalversions"
 
 	"k8s.io/test-infra/prow/crier"
-	"k8s.io/test-infra/prow/pubsub/reporter"
 	"k8s.io/test-infra/prow/logrusutil"
+	"k8s.io/test-infra/prow/pubsub/reporter"
 )
 
 const (
