@@ -80,7 +80,6 @@ filegroup(
         "//prow/cmd/peribolos:all-srcs",
         "//prow/cmd/phony:all-srcs",
         "//prow/cmd/plank:all-srcs",
-        "//prow/cmd/pubsub-crier:all-srcs",
         "//prow/cmd/sidecar:all-srcs",
         "//prow/cmd/sinker:all-srcs",
         "//prow/cmd/splice:all-srcs",
