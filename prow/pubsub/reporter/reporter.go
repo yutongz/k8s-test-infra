@@ -14,9 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package report contains helpers for writing comments and updating
+// Package reporter contains helpers for publishing statues to Pub
 // statuses in Github.
-
 package reporter
 
 import (
@@ -35,6 +34,7 @@ const (
 	pubsubRunIDLabel   = "prow.k8s.io/pubsub-runID"
 )
 
+// ReportMessage is a message structure used to pass a prowjob status to Pub/Sub topic.s
 type ReportMessage struct {
 	Project string            `json:"project"`
 	Topic   string            `json:"topic"`
@@ -42,6 +42,7 @@ type ReportMessage struct {
 	Status  kube.ProwJobState `json:"status"`
 }
 
+// Client is a reporter client fed to crier controller
 type Client struct {
 	// Empty structure because unlike github or gerrit client, one GCP Pub/Sub client is tied to one GCP project.
 	// While GCP project name is provided by the label in each prowjob.
@@ -49,27 +50,30 @@ type Client struct {
 	// instead of creating a Pub/Sub client while initializing the reporter client.
 }
 
+// NewReporter creates a new Pub/Sub reporter
 func NewReporter() *Client {
 	return &Client{}
 }
 
+// Report takes a prowjob, and generate a pubsub ReportMessage and publish to specific Pub/Sub topic
+// based on Pub/Sub related labels if they exist in this prowjob
 func (c *Client) Report(pj *kube.ProwJob) error {
 	message, err := generateMessageFromPJ(pj)
 	if message == nil {
-		return fmt.Errorf("This prowjob cannot handle by this reporter, prowjob name: %s", pj.Name)
+		return fmt.Errorf("this prowjob cannot handle by this reporter, prowjob name: %s", pj.Name)
 	}
 
 	ctx := context.Background()
 	client, err := pubsub.NewClient(ctx, message.Project)
 
 	if err != nil {
-		return fmt.Errorf("Could not create pubsub Client: %v", err)
+		return fmt.Errorf("could not create pubsub Client: %v", err)
 	}
 	topic := client.Topic(message.Topic)
 
 	d, err := json.Marshal(message)
 	if err != nil {
-		return fmt.Errorf("Could not marshal pubsub report: %v", err)
+		return fmt.Errorf("could not marshal pubsub report: %v", err)
 	}
 
 	res := topic.Publish(ctx, &pubsub.Message{
@@ -78,7 +82,7 @@ func (c *Client) Report(pj *kube.ProwJob) error {
 
 	_, err = res.Get(ctx)
 	if err != nil {
-		return fmt.Errorf("Failed to publish pubsub message: %v", err)
+		return fmt.Errorf("failed to publish pubsub message: %v", err)
 	}
 
 	return nil
@@ -92,7 +96,7 @@ func generateMessageFromPJ(pj *kube.ProwJob) (*ReportMessage, error) {
 	}
 	runID := pj.GetLabels()[pubsubRunIDLabel]
 	if runID == "" {
-		return nil, fmt.Errorf("Cannot generate pubsub message, PubSub run id is empty.")
+		return nil, fmt.Errorf("cannot generate pubsub message, PubSub run id is empty")
 	}
 	psReport := &ReportMessage{
 		Project: projectName,

@@ -105,7 +105,7 @@ func TestGenerateMessageFromPJ(t *testing.T) {
 				},
 			},
 			expectedMessage: nil,
-			expectedError:   fmt.Errorf("Cannot generate pubsub message, PubSub run id is empty."),
+			expectedError:   fmt.Errorf("cannot generate pubsub message, PubSub run id is empty"),
 		},
 	}
 
